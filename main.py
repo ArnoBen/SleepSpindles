@@ -26,7 +26,7 @@ for i in range(n_days):
         hypnograms_long[i][j*len_cast:(j+1)*len_cast] = hypnograms[i][j]
     hypnograms_long[i][np.where(np.isnan(hypnograms_long[i]))] = 0
 # Ainsi, stade de sommeil du point eeg_signals[i][124] : hypnograms_long[124] 
-#%% Creation d'epochs de 0.5s (duree minimale d'un spindle)
+#%% Repartition du signal en epochs
 Fs = 250
 n_pts_epochs = 500
 # Il faut rendre le nombre de pts du signal divisible par la taille d'un epoch
@@ -43,7 +43,6 @@ def signal_to_epochs(eeg_data):
         temp_epoch = np.reshape(eeg_data[i], (n_epochs, n_pts_epochs))
         epochs[i] = temp_epoch
     return epochs
-
 # exemple pour acceder a day 2 epoch 10 : epochs[2][10,:]
 
 # Filtrons le signal entre 11Hz et 15Hz:
@@ -101,7 +100,11 @@ detected_epochs = temp_detected
 epochs_stade_filt_nan[0][2][detected_epochs].shape
 
 #Essai detection de cretes
-sg.find_peaks(epochs_stade_filt_nan[0][2][detected_epochs[20]])
+peaks, peak_properties = sg.find_peaks(epochs_stade_filt_nan[0][2][detected_epochs[41]], height=0)
+
+plt.plot(epochs_stade_filt_nan[0][2][detected_epochs[41]])
+plt.scatter(peaks,properties['peak_heights'], color = 'r')
+
 
 #%%
 # Calcul psd pour day 0
