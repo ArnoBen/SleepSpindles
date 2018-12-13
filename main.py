@@ -57,6 +57,7 @@ epochs = signal_to_epochs(eeg_signals)
 epochs_filt = signal_to_epochs(eeg_signals_filt)
 
 #%% Nettoyage du signal
+importlib.reload(myAlgos)
 eeg_signals_filt_nan = [None] * n_days
 for i in range(7):
     #Enlever les valeurs excessivement grandes
@@ -75,18 +76,18 @@ for i in range(n_days): #Parcours par jour
             myAlgos.threshold_reached(current_epoch) :
             
             # On se centre autour de la valeur max.
-            # 750 points <=> 3 secondes
+            # 600 points <=> 2.4 secondes
             max_pos = np.argmax(current_epoch)
-            window = eeg_signals_filt_nan[i][j*n_pts_epochs + max_pos - 375 : j*n_pts_epochs + max_pos + 375]
+            max_val = np.max(current_epoch)
+            window = eeg_signals_filt_nan[i][j*n_pts_epochs + max_pos - 300 : j*n_pts_epochs + max_pos + 300]
             if not myAlgos.nanFound(window):    
                 peaks, peak_properties = sg.find_peaks(window, height=0)
                 peak_heights = peak_properties['peak_heights']
-                myAlgos.keepWavePeaks(peaks, peak_heights)
-            else :
-                continue
-        else :
-            continue
-               
+                if max_val == np.max(peak_heights) :
+                    wave_peaks, wave_heights = myAlgos.keepWavePeaks(peaks, peak_heights)
+                else : continue
+            else : continue
+        else : continue       
            
         
 #%% Repartition des epochs par stade de sommeil:
