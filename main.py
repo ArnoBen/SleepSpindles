@@ -34,18 +34,20 @@ n_pts_epochs = 500
 for i in range(n_days):
     reste = len(eeg_signals[i])%n_pts_epochs
     eeg_signals[i] = eeg_signals[i][reste:]
+    hypnograms_long[i] = hypnograms_long[i][reste:]
     
 #Divisons maintenant le signal en epochs de 125 points:
 def signal_to_epochs(eeg_data):
-    epochs = []
+    epochs = [None] * n_days
     # n epochs, 0.5s/epoch --> (n, 125)
     for i in range(n_days):
-        n_epochs = int(len(eeg_data[i][:])/n_pts_epochs)
-        temp_epoch = np.reshape(eeg_data[i][:], (n_epochs, n_pts_epochs))
-        epochs.append(temp_epoch)
-        return epochs
-# exemple pour acceder a day 2 epoch 10 : epochs[2][10,:]
+        n_epochs = int(len(eeg_data[i])/n_pts_epochs)
+        temp_epoch = np.reshape(eeg_data[i], (n_epochs, n_pts_epochs))
+        epochs[i] = temp_epoch
+    return epochs
+#for i in range(n_days):
 epochs = signal_to_epochs(eeg_signals)
+# exemple pour acceder a day 2 epoch 10 : epochs[2][10,:]
 #%%
 # Avec une nouvelle estimation du stade  de sommeil toutes les 30s,
 # avec 0.5s par epoch, on a une estimation tous les 60 epochs.
@@ -61,8 +63,24 @@ eeg_signals_filt = [None] * n_days
 for i in range(n_days):
     eeg_signals_filt[i] = sg.filtfilt(b,a,eeg_signals[i])
 epochs_filt = signal_to_epochs(eeg_signals_filt)
+#%% Repartition des epochs par stade de sommeil:
+hypno_epochs = signal_to_epochs(hypnograms_long)
+epochs_phase = [None] * n_days
+for i in range(7) : 
+    epochs_phase[i] = [None] * 5 
+    for j in range(5):
+        epochs_phase[i][j] = epochs_filt[0][np.where(hypno_epochs[0][:,0]==j)]
+        
+#PENSER A UTILISER LA P VALUE
+
 #%%
-plt.psd(epochs_filt[0][9000,:], Fs=500,)
-plt.xlim(xmin=0.4, xmax=20)
-plt.figure()
-plt.plot(epochs_filt[0][9000,:])
+#plt.psd(epochs_filt[0][9000,:], Fs=500,)
+#plt.xlim(xmin=0.4, xmax=20)
+#plt.figure()
+#plt.plot(epochs_filt[0][9000,:])
+
+""" Idees pour le filtre :
+    - Std > seuil
+    - si une ou plusieurs valeurs = 0 precisement, casque deco
+    
+"""
