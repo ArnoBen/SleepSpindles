@@ -1,20 +1,30 @@
 # Librairies
-import h5py
 import numpy as np 
-import scipy as sp
 import scipy.signal as sg
 import matplotlib.pyplot as plt
+import h5py
 
-# Importation des données
+# Importation des donnees
 data_spindles = h5py.File('data_spindles.h5')    
 n_days = len(data_spindles) # n=7
-eeg_signals = [None] * 7
-hypnograms = [None] * 7
+eeg_signals = [None] * n_days
+hypnograms = [None] * n_days
+hypnograms_long = [None] * n_days
+
 for i in range(n_days):
     path = 'day_' + str(i) + '/'
     eeg_signals[i] = data_spindles[path + 'eeg_signal']
     hypnograms[i] = data_spindles[path + 'hypnogram']
-    
+
+# Cela permet de recuperer un stade de sommeil facilement :
+for i in range(n_days):
+    hypnograms_long[i] = np.empty(len(eeg_signals[i]))
+    hypnograms_long[i][:] = np.nan
+    len_cast = int(len(eeg_signals[i])/len(hypnograms[i]))
+    for j in range(len(hypnograms[i])):
+        hypnograms_long[i][j*len_cast:(j+1)*len_cast] = hypnograms[i][j]
+    hypnograms_long[i][np.where(np.isnan(hypnograms_long[i]))] = 0
+# Ainsi, stade de sommeil du point eeg_signals[i][124] : hypnograms_long[124] 
 #%% Creation d'epochs de 0.5s (duree minimale d'un spindle)
 """A 250Hz, 0.5s <=> 125 points
 Tout d'abord, il faut supprimer quelques points pour rendre le nombre total 
@@ -47,7 +57,7 @@ def get_sleep_state(day, epoch):
 #%%
 # Filtrons le signal entre 11Hz et 15Hz:
 b,a=sg.butter(5,(11/Fs, 15/Fs),'bandpass')
-eeg_signals_filt = [None] * 7
+eeg_signals_filt = [None] * n_days
 for i in range(n_days):
     eeg_signals_filt[i] = sg.filtfilt(b,a,eeg_signals[i])
 epochs_filt = signal_to_epochs(eeg_signals_filt)
