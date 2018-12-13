@@ -4,6 +4,7 @@ import scipy
 import scipy.signal as sg
 import matplotlib.pyplot as plt
 import h5py
+import myAlgos
 
 # Importation des donnees
 data_spindles = h5py.File('data_spindles.h5')    
@@ -28,7 +29,7 @@ for i in range(n_days):
 # Ainsi, stade de sommeil du point eeg_signals[i][124] : hypnograms_long[124] 
 #%% Repartition du signal en epochs
 Fs = 250
-n_pts_epochs = 500
+n_pts_epochs = 2500
 # Il faut rendre le nombre de pts du signal divisible par la taille d'un epoch
 for i in range(n_days):
     reste = len(eeg_signals[i])%n_pts_epochs
@@ -53,6 +54,31 @@ for i in range(n_days):
   
 epochs = signal_to_epochs(eeg_signals)
 epochs_filt = signal_to_epochs(eeg_signals_filt)
+
+#%% Nettoyage du signal
+eeg_signals_filt_nan = [None] * n_days
+for i in range(7):
+    #Enlever les valeurs excessivement grandes
+    amp_excess = np.where(np.abs(eeg_signals_filt[i]) > 50)[0]
+    eeg_signals_filt_nan[i] = np.copy(eeg_signals_filt[i])
+    eeg_signals_filt_nan[i][amp_excess] = np.NaN
+
+epochs_filt_nan = signal_to_epochs(eeg_signals_filt_nan)
+
+#Detection des spindles
+
+for i in range(n_days): #Parcours par jour
+    for j in range(epochs_filt_nan[i].shape[0]): #Parcours par epoch
+        current_epoch = epochs_filt_nan[i][j]
+        if (not myAlgos.nanFound(current_epoch)) and \
+            myAlgos.threshold_reached(current_epoch) :
+            max_value = np.max(current_epoch)
+            
+        else :
+            continue
+               
+           
+        
 #%% Repartition des epochs par stade de sommeil:
 hypno_epochs = signal_to_epochs(hypnograms_long)
 def epoch_to_sleepstage(epochs):
