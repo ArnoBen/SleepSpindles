@@ -1,5 +1,6 @@
 # Librairies
 import numpy as np 
+import scipy
 import scipy.signal as sg
 import matplotlib.pyplot as plt
 import h5py
@@ -30,7 +31,7 @@ for i in range(n_days):
 Tout d'abord, il faut supprimer quelques points pour rendre le nombre total 
 de points divisible par 125"""
 Fs = 250
-n_pts_epochs = 500
+n_pts_epochs = 125
 for i in range(n_days):
     reste = len(eeg_signals[i])%n_pts_epochs
     eeg_signals[i] = eeg_signals[i][reste:]
@@ -65,12 +66,24 @@ for i in range(n_days):
 epochs_filt = signal_to_epochs(eeg_signals_filt)
 #%% Repartition des epochs par stade de sommeil:
 hypno_epochs = signal_to_epochs(hypnograms_long)
-epochs_phase = [None] * n_days
+epochs_stade = [None] * n_days
 for i in range(7) : 
-    epochs_phase[i] = [None] * 5 
+    epochs_stade[i] = [None] * 5 
     for j in range(5):
-        epochs_phase[i][j] = epochs_filt[0][np.where(hypno_epochs[0][:,0]==j)]
-        
+        epochs_stade[i][j] = epochs_filt[0][np.where(hypno_epochs[0][:,0]==j)]
+#%%
+# Calcul psd pour day 0
+psd, moy, std = [[None] * 5 for i in range(3)]
+for i in range(1,5): #on exclut l'eveil
+    
+    psd[i] = sg.periodogram(epochs_stade[0][i],fs=Fs)[1][:,11:16]
+    # Enlever les valeurs aberrantes
+    amp_excess = np.where(np.mean(psd[i],axis=1)>20)
+    zero_values = np.where(np.mean(psd[i],axis=1)==0.0)
+    psd[i][amp_excess] = np.NaN
+    moy[i] = np.nanmean(psd[i])
+    std[i] = np.nanstd(psd[i])
+plt.errorbar([1,2,3,4],moy[1:5],std[1:5],linestyle='None', marker='o')
 #PENSER A UTILISER LA P VALUE
 
 #%%
@@ -81,6 +94,6 @@ for i in range(7) :
 
 """ Idees pour le filtre :
     - Std > seuil
-    - si une ou plusieurs valeurs = 0 precisement, casque deco
+    - si une ou plusieurs valeurs = 0 precisement, eeg deco
     
 """
