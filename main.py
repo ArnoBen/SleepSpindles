@@ -4,6 +4,7 @@ import scipy
 import scipy.signal as sg
 import matplotlib.pyplot as plt
 import h5py
+import importlib
 import myAlgos
 
 # Importation des donnees
@@ -72,8 +73,17 @@ for i in range(n_days): #Parcours par jour
         current_epoch = epochs_filt_nan[i][j]
         if (not myAlgos.nanFound(current_epoch)) and \
             myAlgos.threshold_reached(current_epoch) :
-            max_value = np.max(current_epoch)
             
+            # On se centre autour de la valeur max.
+            # 750 points <=> 3 secondes
+            max_pos = np.argmax(current_epoch)
+            window = eeg_signals_filt_nan[i][j*n_pts_epochs + max_pos - 375 : j*n_pts_epochs + max_pos + 375]
+            if not myAlgos.nanFound(window):    
+                peaks, peak_properties = sg.find_peaks(window, height=0)
+                peak_heights = peak_properties['peak_heights']
+                myAlgos.keepWavePeaks(peaks, peak_heights)
+            else :
+                continue
         else :
             continue
                
@@ -129,7 +139,7 @@ epochs_stade_filt_nan[0][2][detected_epochs].shape
 peaks, peak_properties = sg.find_peaks(epochs_stade_filt_nan[0][2][detected_epochs[41]], height=0)
 
 plt.plot(epochs_stade_filt_nan[0][2][detected_epochs[41]])
-plt.scatter(peaks,properties['peak_heights'], color = 'r')
+plt.scatter(peaks,peak_properties['peak_heights'], color = 'r')
 
 
 #%%
