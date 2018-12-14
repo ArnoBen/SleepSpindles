@@ -65,8 +65,17 @@ for i in range(7):
     #Enlever les valeurs excessivement grandes
     amp_excess = np.where(np.abs(eeg_signals_filt[i]) > 80)[0]
     eeg_signals_filt_nan[i] = np.copy(eeg_signals_filt[i])
-    eeg_signals_filt_nan[i][amp_excess] = np.NaN
-
+    rem_len = 375 #On enlève 1.5s à droite et à gauche
+    for j in range(len(amp_excess)):
+        #Si on est pas aux limites
+        if amp_excess[j] > rem_len and amp_excess[j] + rem_len < len(eeg_signals_filt_nan[i]):
+            eeg_signals_filt_nan[i][amp_excess[j] - rem_len :  amp_excess[j] + rem_len] = np.NaN
+        #Sinon
+        elif amp_excess[j] < rem_len:
+            eeg_signals_filt_nan[i][:amp_excess[j] + rem_len] = np.NaN
+        elif amp_excess[j] + rem_len > len(eeg_signals_filt_nan[i]):
+            eeg_signals_filt_nan[i][amp_excess[j]:] = np.NaN
+    
 epochs_filt_nan = signal_to_epochs(eeg_signals_filt_nan)
 
 #Detection des spindles
