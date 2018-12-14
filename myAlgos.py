@@ -21,11 +21,13 @@ def keepWavePeaks(peaks, peak_heights):
     limit_reached = False
     i = 0
     while not limit_reached:
+        # Si on atteint les crêtes aux extrémités
         if  max_height_index + i + 1 == len(peak_heights) or\
             max_height_index - i == 0:
             limit_reached = True
-            #TODO
             continue
+        # Sinon, on soustrait l'amplitude des crêtes successives.
+        # Tant que cette différence est positive, c'est qu'on décroît.
         else :
             if peak_heights[max_height_index + i] - peak_heights[max_height_index + i + 1] > 0 and \
                peak_heights[max_height_index - i] - peak_heights[max_height_index - i - 1] > 0:
@@ -42,17 +44,18 @@ def keepWavePeaks(peaks, peak_heights):
 def waveLength(peaks):
     length = peaks[len(peaks)-1] - peaks[0]
     length = np.round(length/250,1)
+    
     return length
 
 def isTooLong(peaks):
     is_too_long = False
-    if waveLength(peaks) > 2: # Si la wave > 2s
+    if waveLength(peaks) > 2: # Si > 2s
         is_too_long = True
     return is_too_long
 
 def isTooShort(peaks):
     is_too_short = False
-    if waveLength(peaks) < 0.5: # Si la wave < 0.5s
+    if waveLength(peaks) < 0.5: # Si < 0.5s
         is_too_short = True
     return is_too_short
 

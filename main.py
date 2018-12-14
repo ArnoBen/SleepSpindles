@@ -54,9 +54,9 @@ def signal_to_epochs(eeg_data):
     return epochs
 # exemple pour acceder a day 2 epoch 10 : epochs[2][10,:]
 
- 
 epochs = signal_to_epochs(eeg_signals)
 epochs_filt = signal_to_epochs(eeg_signals_filt)
+
 
 #%% Nettoyage du signal
 importlib.reload(myAlgos)
@@ -114,6 +114,7 @@ for i in range(n_days): #Parcours par jour
                                 spindles_positions[i].append(j*n_pts_epochs + max_pos)
                                 spindles_heights[i].append(np.round(np.max(wave_heights),0))
                                 spindles_length[i].append(myAlgos.waveLength(wave_peaks))
+                                print(myAlgos.waveLength(wave_peaks))
                             else :
                                 fails[5] += 1
                                 continue
@@ -160,58 +161,28 @@ for i in range(len(spindles_positions[jour])):
     plt.axvline(x = spindles_positions[jour][i], ymin = 0.4, ymax = 0.6, color = 'r')
 plt.plot(hypnograms_long[jour] * 100, color = 'C1')    
     
-
-#%% Repartition des epochs par stade de sommeil:
-hypno_epochs = signal_to_epochs(hypnograms_long)
-def epoch_to_sleepstage(epochs):
-    epochs_stade = [None] * n_days
-    for i in range(7) : 
-        epochs_stade[i] = [None] * 5 
-        for j in range(5):
-            epochs_stade[i][j] = epochs[0][np.where(hypno_epochs[0][:,0]==j)]
-    return epochs_stade
-epochs_stade_filt = epoch_to_sleepstage(epochs_filt)
-#%% Detection des spindles
-eeg_signals_filt_nan = [None] * n_days
+#%% Densité des spindles
+spindle_density = [None] * 7
 for i in range(7):
-    amp_excess = np.where(np.abs(eeg_signals_filt[i]) > 50)
-    eeg_signals_filt_nan[i] = np.copy(eeg_signals_filt[i])
-    eeg_signals_filt_nan[i][amp_excess] = np.NaN
+    # Je sépare arbitrairement une nuit en 10 parties égales
+    l = len(eeg_signals[i])
+    spindle_density[i] = [] * 10
+    for j in range(10):
+        np.where(int((l + j) / 10) < np.array(spindles_positions[i]) < int((l + j + 1) / 10))
+    
+    
+#%% Repartition des epochs par stade de sommeil:
+#hypnograms_epochs = signal_to_epochs(hypnograms_long)
+#def epoch_to_sleepstage(epochs):
+#    epochs_stade = [None] * n_days
+#    for i in range(7) : 
+#        epochs_stade[i] = [None] * 5 
+#        for j in range(5):
+#            epochs_stade[i][j] = epochs[0][np.where(hypnograms_epochs[0][:,0]==j)]
+#    return epochs_stade
+#epochs_stade_filt = epoch_to_sleepstage(epochs_filt)
 
-epochs_filt_nan = signal_to_epochs(eeg_signals_filt_nan)
-epochs_stade_filt_nan = epoch_to_sleepstage(epochs_filt_nan)
-
-"""
-On estime tout d'abord la moyenne et l'ecart-type du signal par phase.
-Ensuite, on regarde combien de spindles sont détectés (par minute, accessoirement) 
-"""
-
-# Essai sur day 0, phase 2
-std_test = np.nanstd(epochs_stade_filt_nan[0][2])
-detected_epochs = np.where(np.nanmax(epochs_stade_filt_nan[0][2],axis=1) > 3 * std_test)[0]
-
-temp_detected = []
-len_det = len(detected_epochs)
-for i in range(len_det):
-    # S'il y a une valeur Nan, next
-    if np.isnan(epochs_stade_filt_nan[0][2][detected_epochs[i],:]).any() == True:
-        continue
-    if  (i < len_det - 2 and detected_epochs[i + 2] == detected_epochs[i] + 2) or \
-        (i > 2 and detected_epochs[i - 2] == detected_epochs[i] - 2):
-        continue
-        # + 2 parce que si un spindle se passe sur 2 epochs, il faut la garder
-        # mais 3 epochs c'est trop long.
-    else:  
-        temp_detected.append(detected_epochs[i])
-detected_epochs = temp_detected
-
-epochs_stade_filt_nan[0][2][detected_epochs].shape
-
-#Essai detection de cretes
-peaks, peak_properties = sg.find_peaks(epochs_stade_filt_nan[0][2][detected_epochs[41]], height=0)
-
-plt.plot(epochs_stade_filt_nan[0][2][detected_epochs[41]])
-plt.scatter(peaks,peak_properties['peak_heights'], color = 'r')
+#%%
 
 
 #%%
