@@ -40,19 +40,19 @@ def keepWavePeaks(peaks, peak_heights):
     return(new_peaks, new_peak_heights)
 
 def waveLength(peaks):
-    length = peaks[len(peaks)-1] - len(peaks)
+    length = peaks[len(peaks)-1] - peaks[0]
     length = np.round(length/250,1)
     return length
 
 def isTooLong(peaks):
     is_too_long = False
-    if peaks[len(peaks)-1] - peaks[0] > 575: # Si la wave > 2.3s
+    if waveLength(peaks) > 2: # Si la wave > 2s
         is_too_long = True
     return is_too_long
 
 def isTooShort(peaks):
     is_too_short = False
-    if peaks[len(peaks)-1] - peaks[0] < 100: # Si la wave < 0.4s
+    if waveLength(peaks) < 0.5: # Si la wave < 0.5s
         is_too_short = True
     return is_too_short
 

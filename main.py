@@ -107,12 +107,12 @@ for i in range(n_days): #Parcours par jour
                 peak_heights = peak_properties['peak_heights']
                 if max_val == np.max(peak_heights) : #si rien de bizare lors du fenetrage
                     wave_peaks, wave_heights = myAlgos.keepWavePeaks(peaks, peak_heights)
-                    if not myAlgos.isTooShort(wave_peaks): #si >0.5s
+                    if not myAlgos.isTooShort(wave_peaks) and not myAlgos.isTooLong(wave_peaks): #si 0.5<x<2
                         if myAlgos.isSymmetric(wave_heights): #si les cretes sont symmetriques
                             if myAlgos.isTooHigh(wave_heights): #Si l'amplitude min n'est pas trop grande
                                 spindles_detected += 1
                                 spindles_positions[i].append(j*n_pts_epochs + max_pos)
-                                spindles_heights[i].append(np.round(np.max(wave_heights),2))
+                                spindles_heights[i].append(np.round(np.max(wave_heights),0))
                                 spindles_length[i].append(myAlgos.waveLength(wave_peaks))
                             else :
                                 fails[5] += 1
@@ -151,13 +151,14 @@ for i in range(20):
     if j == 5 : 
         plt.figure()
         j = 1
-#%% Affichage des spindles sur tout le signal du day 0
+#%% Affichage des spindles sur tout le signal d'un jour
+jour = 3
 plt.figure()
-plt.plot(eeg_signals[0])
+plt.plot(eeg_signals_filt_nan[jour])
 plt.ylim(-500,500)
-for i in range(len(spindles_positions[0])):
-    plt.axvline(x = spindles_positions[0][i], ymin = 0.4, ymax = 0.6, color = 'r')
-plt.plot(hypnograms_long[0] * 100, color = 'C1')    
+for i in range(len(spindles_positions[jour])):
+    plt.axvline(x = spindles_positions[jour][i], ymin = 0.4, ymax = 0.6, color = 'r')
+plt.plot(hypnograms_long[jour] * 100, color = 'C1')    
     
 
 #%% Repartition des epochs par stade de sommeil:
