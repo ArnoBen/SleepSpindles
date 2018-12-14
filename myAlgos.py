@@ -18,34 +18,25 @@ def keepWavePeaks(peaks, peak_heights):
     new_peak_heights = []
     new_peak_heights.append(np.max(peak_heights))
     
-    right_limit_reached = False
+    limit_reached = False
     i = 0
-    while not right_limit_reached:
-        #Tant qu'on decroit      
-        if max_height_index + i + 1 == len(peak_heights):
-            right_limit_reached = True
+    while not limit_reached:
+        if  max_height_index + i + 1 == len(peak_heights) or\
+            max_height_index - i == 0:
+            limit_reached = True
+            #TODO
             continue
-        if peak_heights[max_height_index + i] - peak_heights[max_height_index + i + 1] > 0:
-            new_peak_heights.append(peak_heights[max_height_index + i + 1])
-            new_peaks.append(peaks[max_height_index + i + 1])
-            i += 1
-        else:
-            right_limit_reached = True
-    
-    left_limit_reached = False
-    i = 0
-    while not left_limit_reached:
-        #Tant qu'on decroit      
-        if max_height_index - i == 0:
-            left_limit_reached = True
-            continue
-        if peak_heights[max_height_index - i] - peak_heights[max_height_index - i - 1] > 0:
-            new_peak_heights.insert(0,peak_heights[max_height_index - i - 1])
-            new_peaks.insert(0,peaks[max_height_index - i - 1])
-            i += 1
-        else:
-            left_limit_reached = True
-    
+        else :
+            if peak_heights[max_height_index + i] - peak_heights[max_height_index + i + 1] > 0 and \
+               peak_heights[max_height_index - i] - peak_heights[max_height_index - i - 1] > 0:
+                new_peak_heights.append(peak_heights[max_height_index + i + 1])
+                new_peak_heights.insert(0,peak_heights[max_height_index - i - 1])
+                new_peaks.append(peaks[max_height_index + i + 1])
+                new_peaks.insert(0,peaks[max_height_index - i - 1])
+                i += 1           
+            else:
+                limit_reached = True 
+                continue
     return(new_peaks, new_peak_heights)
 
 def isTooLong(peaks):
@@ -67,7 +58,7 @@ def isSymmetric(peak_heights):
         n_iter = int(len(peak_heights)/2)
         for i in range(n_iter):
             epsilon = peak_heights[len(peak_heights) - 1 - i] - peak_heights[i]
-            if epsilon > 2:
+            if epsilon > 3:
                 is_symmetric = False
                 return is_symmetric
     #Si impair:
@@ -75,7 +66,7 @@ def isSymmetric(peak_heights):
         n_iter = int(len(peak_heights)/2)
         for i in range(n_iter):
             epsilon = peak_heights[len(peak_heights) - 1 - i] - peak_heights[i]
-            if epsilon > 2:
+            if epsilon > 3:
                 is_symmetric = False
                 return is_symmetric
     return is_symmetric

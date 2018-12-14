@@ -28,7 +28,7 @@ for i in range(n_days):
         hypnograms_long[i][j*len_cast:(j+1)*len_cast] = hypnograms[i][j]
     hypnograms_long[i][np.where(np.isnan(hypnograms_long[i]))] = 0
 # Ainsi, stade de sommeil du point eeg_signals[i][124] : hypnograms_long[124] 
-#%% Repartition du signal en epochs
+# Repartition du signal en epochs
 Fs = 250
 n_pts_epochs = 1250
 # Il faut rendre le nombre de pts du signal divisible par la taille d'un epoch
@@ -89,7 +89,7 @@ for i in range(n_days): #Parcours par jour
                 peak_heights = peak_properties['peak_heights']
                 if max_val == np.max(peak_heights) : #si rien de bizare lors du fenetrage
                     wave_peaks, wave_heights = myAlgos.keepWavePeaks(peaks, peak_heights)
-                    if not myAlgos.isTooLong(peaks) and not myAlgos.isTooShort(peaks): #si 0.5s<x<2.1s
+                    if not myAlgos.isTooShort(peaks): #si >0.5s
                         if myAlgos.isSymmetric(peak_heights): #si les cretes sont symmetriques
                             spindles_detected += 1
                             spindles_positions[i].append(j*n_pts_epochs + max_pos)
@@ -109,7 +109,21 @@ for i in range(n_days): #Parcours par jour
             fails[0] += 1
             continue 
 print('spindles detectees : ', spindles_detected)           
-        
+
+#TODO : Afficher avec des vlines la positions des spindles + quelques exemples
+#%% Affichage de spindles
+j = 1
+for i in range(20):
+    rand_day = int(np.random.randint(0,7,1))
+    rand_spindle_pos = spindles_positions[rand_day][int(np.random.randint(0,200,1))]
+    plt.subplot(1,4,j)
+    plt.plot(eeg_signals_filt_nan[rand_day][rand_spindle_pos - 250 : rand_spindle_pos + 250])
+    j += 1
+    if j == 5 : 
+        plt.figure()
+        j = 1
+    
+
 #%% Repartition des epochs par stade de sommeil:
 hypno_epochs = signal_to_epochs(hypnograms_long)
 def epoch_to_sleepstage(epochs):
