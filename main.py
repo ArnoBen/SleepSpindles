@@ -30,7 +30,7 @@ for i in range(n_days):
 # Ainsi, stade de sommeil du point eeg_signals[i][124] : hypnograms_long[124] 
 #%% Repartition du signal en epochs
 Fs = 250
-n_pts_epochs = 2500
+n_pts_epochs = 1250
 # Il faut rendre le nombre de pts du signal divisible par la taille d'un epoch
 for i in range(n_days):
     reste = len(eeg_signals[i])%n_pts_epochs
@@ -61,16 +61,20 @@ importlib.reload(myAlgos)
 eeg_signals_filt_nan = [None] * n_days
 for i in range(7):
     #Enlever les valeurs excessivement grandes
-    amp_excess = np.where(np.abs(eeg_signals_filt[i]) > 50)[0]
+    amp_excess = np.where(np.abs(eeg_signals_filt[i]) > 80)[0]
     eeg_signals_filt_nan[i] = np.copy(eeg_signals_filt[i])
     eeg_signals_filt_nan[i][amp_excess] = np.NaN
 
 epochs_filt_nan = signal_to_epochs(eeg_signals_filt_nan)
 
 #Detection des spindles
-
+spindles_detected = 0
+spindles_positions = [None] * n_days
+fails = np.array([0,0,0,0,0])
 for i in range(n_days): #Parcours par jour
+    spindles_positions[i] = []
     for j in range(epochs_filt_nan[i].shape[0]): #Parcours par epoch
+        if j == 0: continue #petit probleme au tout debut a cause d'artefacts
         current_epoch = epochs_filt_nan[i][j]
         if (not myAlgos.nanFound(current_epoch)) and \
             myAlgos.threshold_reached(current_epoch) :
@@ -83,12 +87,28 @@ for i in range(n_days): #Parcours par jour
             if not myAlgos.nanFound(window):    
                 peaks, peak_properties = sg.find_peaks(window, height=0)
                 peak_heights = peak_properties['peak_heights']
-                if max_val == np.max(peak_heights) :
+                if max_val == np.max(peak_heights) : #si rien de bizare lors du fenetrage
                     wave_peaks, wave_heights = myAlgos.keepWavePeaks(peaks, peak_heights)
-                else : continue
-            else : continue
-        else : continue       
-           
+                    if not myAlgos.isTooLong(peaks) and not myAlgos.isTooShort(peaks): #si 0.5s<x<2.1s
+                        if myAlgos.isSymmetric(peak_heights): #si les cretes sont symmetriques
+                            spindles_detected += 1
+                            spindles_positions[i].append(j*n_pts_epochs + max_pos)
+                        else :
+                            fails[4] += 1
+                            continue
+                    else :
+                        fails[3] += 1
+                        continue
+                else : 
+                    fails[2] += 1
+                    continue
+            else :
+                fails[1] += 1
+                continue
+        else : 
+            fails[0] += 1
+            continue 
+print('spindles detectees : ', spindles_detected)           
         
 #%% Repartition des epochs par stade de sommeil:
 hypno_epochs = signal_to_epochs(hypnograms_long)

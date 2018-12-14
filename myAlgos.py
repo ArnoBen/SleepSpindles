@@ -2,7 +2,7 @@ import numpy as np
 
 def threshold_reached(epoch):
     reached = False
-    if np.max(epoch) > 18:
+    if np.max(epoch) > 14:
         reached = True
     return reached
 
@@ -47,4 +47,36 @@ def keepWavePeaks(peaks, peak_heights):
             left_limit_reached = True
     
     return(new_peaks, new_peak_heights)
-    
+
+def isTooLong(peaks):
+    is_too_long = False
+    if peaks[len(peaks)-1] - peaks[0] > 575: #Si la wave > 2.3s
+        is_too_long = True
+    return is_too_long
+
+def isTooShort(peaks):
+    is_too_short = False
+    if peaks[len(peaks)-1] - peaks[0] < 100: #Si la wave < 0.4s
+        is_too_short = True
+    return is_too_short
+
+def isSymmetric(peak_heights):
+    is_symmetric = True
+    #Si pair:
+    if len(peak_heights)%2 == 0:
+        n_iter = int(len(peak_heights)/2)
+        for i in range(n_iter):
+            epsilon = peak_heights[len(peak_heights) - 1 - i] - peak_heights[i]
+            if epsilon > 2:
+                is_symmetric = False
+                return is_symmetric
+    #Si impair:
+    if len(peak_heights)%2 == 1:
+        n_iter = int(len(peak_heights)/2)
+        for i in range(n_iter):
+            epsilon = peak_heights[len(peak_heights) - 1 - i] - peak_heights[i]
+            if epsilon > 2:
+                is_symmetric = False
+                return is_symmetric
+    return is_symmetric
+                
