@@ -83,7 +83,6 @@ spindles_detected = 0
 spindles_positions = [None] * n_days
 spindles_heights = [None] * n_days
 spindles_length = [None] * n_days
-
 fails = np.array([0,0,0,0,0,0])
 for i in range(n_days): #Parcours par jour
     spindles_positions[i] = []
@@ -100,6 +99,9 @@ for i in range(n_days): #Parcours par jour
             max_pos = np.argmax(current_epoch)
             max_val = np.max(current_epoch)
             window = eeg_signals_filt_nan[i][j*n_pts_epochs + max_pos - 300 : j*n_pts_epochs + max_pos + 300]
+            #C'est plus pratique d'avoir le spindle centré sur sa valeur absolue max:
+            if window[int(len(window)/2)] < np.max(-window[int(len(window)/2) - 20 : int(len(window)/2) + 20]):
+                window = -window
             if not myAlgos.nanFound(window):    
                 peaks, peak_properties = sg.find_peaks(window, height=0)
                 peak_heights = peak_properties['peak_heights']
@@ -132,7 +134,11 @@ for i in range(n_days): #Parcours par jour
             continue 
 print('spindles detectees : ', spindles_detected)           
 
-#TODO : Afficher avec des vlines la positions des spindles + quelques exemples
+#%% Afficher une spindle
+plt.clf()
+myspindle = 132
+plt.plot(eeg_signals_filt_nan[3][spindles_positions[3][myspindle] - 2500 : spindles_positions[3][myspindle] + 2500])
+#plt.axhline(15,color='C1', alpha = 0.8)
 #%% Affichage de spindles isolees
 j = 1
 for i in range(20):

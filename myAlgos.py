@@ -2,7 +2,7 @@ import numpy as np
 
 def threshold_reached(epoch):
     reached = False
-    if np.max(epoch) > 14:
+    if np.max(epoch) > 15:
         reached = True
     return reached
 
