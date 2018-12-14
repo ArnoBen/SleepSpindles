@@ -1,6 +1,5 @@
 # Librairies
 import numpy as np 
-import scipy
 import scipy.signal as sg
 import matplotlib.pyplot as plt
 import h5py
@@ -28,13 +27,21 @@ for i in range(n_days):
         hypnograms_long[i][j*len_cast:(j+1)*len_cast] = hypnograms[i][j]
     hypnograms_long[i][np.where(np.isnan(hypnograms_long[i]))] = 0
 # Ainsi, stade de sommeil du point eeg_signals[i][124] : hypnograms_long[124] 
-# Repartition du signal en epochs
+    
+# Filtrons le signal entre 11Hz et 15Hz:
 Fs = 250
+b,a=sg.butter(5,(11/Fs, 15/Fs),'bandpass')
+eeg_signals_filt = [None] * n_days
+for i in range(n_days):
+    eeg_signals_filt[i] = sg.filtfilt(b,a,eeg_signals[i])
+# Repartition du signal en epochs
+
 n_pts_epochs = 1250
 # Il faut rendre le nombre de pts du signal divisible par la taille d'un epoch
 for i in range(n_days):
     reste = len(eeg_signals[i])%n_pts_epochs
     eeg_signals[i] = eeg_signals[i][reste:]
+    eeg_signals_filt[i] = eeg_signals_filt[i][reste:]
     hypnograms_long[i] = hypnograms_long[i][reste:]
     
 def signal_to_epochs(eeg_data):
@@ -47,12 +54,7 @@ def signal_to_epochs(eeg_data):
     return epochs
 # exemple pour acceder a day 2 epoch 10 : epochs[2][10,:]
 
-# Filtrons le signal entre 11Hz et 15Hz:
-b,a=sg.butter(5,(11/Fs, 15/Fs),'bandpass')
-eeg_signals_filt = [None] * n_days
-for i in range(n_days):
-    eeg_signals_filt[i] = sg.filtfilt(b,a,eeg_signals[i])
-  
+ 
 epochs = signal_to_epochs(eeg_signals)
 epochs_filt = signal_to_epochs(eeg_signals_filt)
 
@@ -70,9 +72,14 @@ epochs_filt_nan = signal_to_epochs(eeg_signals_filt_nan)
 #Detection des spindles
 spindles_detected = 0
 spindles_positions = [None] * n_days
-fails = np.array([0,0,0,0,0])
+spindles_heights = [None] * n_days
+spindles_length = [None] * n_days
+
+fails = np.array([0,0,0,0,0,0])
 for i in range(n_days): #Parcours par jour
     spindles_positions[i] = []
+    spindles_heights[i] = []
+    spindles_length[i] = []
     for j in range(epochs_filt_nan[i].shape[0]): #Parcours par epoch
         if j == 0: continue #petit probleme au tout debut a cause d'artefacts
         current_epoch = epochs_filt_nan[i][j]
@@ -89,10 +96,16 @@ for i in range(n_days): #Parcours par jour
                 peak_heights = peak_properties['peak_heights']
                 if max_val == np.max(peak_heights) : #si rien de bizare lors du fenetrage
                     wave_peaks, wave_heights = myAlgos.keepWavePeaks(peaks, peak_heights)
-                    if not myAlgos.isTooShort(peaks): #si >0.5s
-                        if myAlgos.isSymmetric(peak_heights): #si les cretes sont symmetriques
-                            spindles_detected += 1
-                            spindles_positions[i].append(j*n_pts_epochs + max_pos)
+                    if not myAlgos.isTooShort(wave_peaks): #si >0.5s
+                        if myAlgos.isSymmetric(wave_heights): #si les cretes sont symmetriques
+                            if myAlgos.isTooHigh(wave_heights): #Si l'amplitude min n'est pas trop grande
+                                spindles_detected += 1
+                                spindles_positions[i].append(j*n_pts_epochs + max_pos)
+                                spindles_heights[i].append(np.round(np.max(wave_heights),2))
+                                spindles_length[i].append(myAlgos.waveLength(wave_peaks))
+                            else :
+                                fails[5] += 1
+                                continue
                         else :
                             fails[4] += 1
                             continue
@@ -111,17 +124,25 @@ for i in range(n_days): #Parcours par jour
 print('spindles detectees : ', spindles_detected)           
 
 #TODO : Afficher avec des vlines la positions des spindles + quelques exemples
-#%% Affichage de spindles
+#%% Affichage de spindles isolees
 j = 1
 for i in range(20):
     rand_day = int(np.random.randint(0,7,1))
     rand_spindle_pos = spindles_positions[rand_day][int(np.random.randint(0,200,1))]
     plt.subplot(1,4,j)
     plt.plot(eeg_signals_filt_nan[rand_day][rand_spindle_pos - 250 : rand_spindle_pos + 250])
+    plt.title(str(rand_day) + ' | ' + str(rand_spindle_pos))
     j += 1
     if j == 5 : 
         plt.figure()
         j = 1
+#%% Affichage des spindles sur tout le signal du day 0
+plt.figure()
+plt.plot(eeg_signals[0])
+plt.ylim(-500,500)
+for i in range(len(spindles_positions[0])):
+    plt.axvline(x = spindles_positions[0][i], ymin = 0.4, ymax = 0.6, color = 'r')
+plt.plot(hypnograms_long[0] * 100, color = 'C1')    
     
 
 #%% Repartition des epochs par stade de sommeil:

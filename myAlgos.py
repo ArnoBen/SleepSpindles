@@ -7,10 +7,10 @@ def threshold_reached(epoch):
     return reached
 
 def nanFound(epoch):
-    return np.isnan(epoch).any() #True if nan is found
+    return np.isnan(epoch).any() # True if nan is found
     
 def keepWavePeaks(peaks, peak_heights):
-    #Garde les cretes decroissantes autour du max
+    # Garde les cretes decroissantes autour du max
     max_height_index = np.argmax(peak_heights)
     
     new_peaks = []
@@ -39,21 +39,26 @@ def keepWavePeaks(peaks, peak_heights):
                 continue
     return(new_peaks, new_peak_heights)
 
+def waveLength(peaks):
+    length = peaks[len(peaks)-1] - len(peaks)
+    length = np.round(length/250,1)
+    return length
+
 def isTooLong(peaks):
     is_too_long = False
-    if peaks[len(peaks)-1] - peaks[0] > 575: #Si la wave > 2.3s
+    if peaks[len(peaks)-1] - peaks[0] > 575: # Si la wave > 2.3s
         is_too_long = True
     return is_too_long
 
 def isTooShort(peaks):
     is_too_short = False
-    if peaks[len(peaks)-1] - peaks[0] < 100: #Si la wave < 0.4s
+    if peaks[len(peaks)-1] - peaks[0] < 100: # Si la wave < 0.4s
         is_too_short = True
     return is_too_short
 
 def isSymmetric(peak_heights):
     is_symmetric = True
-    #Si pair:
+    # Si pair:
     if len(peak_heights)%2 == 0:
         n_iter = int(len(peak_heights)/2)
         for i in range(n_iter):
@@ -61,7 +66,7 @@ def isSymmetric(peak_heights):
             if epsilon > 3:
                 is_symmetric = False
                 return is_symmetric
-    #Si impair:
+    # Si impair:
     if len(peak_heights)%2 == 1:
         n_iter = int(len(peak_heights)/2)
         for i in range(n_iter):
@@ -70,4 +75,16 @@ def isSymmetric(peak_heights):
                 is_symmetric = False
                 return is_symmetric
     return is_symmetric
-                
+
+def isTooHigh(peak_heights):
+    is_too_high = False
+    if peak_heights[0] > 5 or peak_heights[len(peak_heights)-1] > 5:
+        is_too_high = True
+    return is_too_high
+
+def pointsToTime(n_points, Fs = 250):
+    h, m, s = [], [], []
+    n_points = int(n_points/250) # Resultat en secondes
+    h, reste = divmod(n_points, 3600)
+    m, s = divmod(reste, 60)
+    return (h,m,s)
