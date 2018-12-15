@@ -3,6 +3,7 @@ import numpy as np
 import scipy.signal as sg
 import matplotlib.pyplot as plt
 import h5py
+import scipy
 import importlib
 import myAlgos
 
@@ -114,7 +115,6 @@ for i in range(n_days): #Parcours par jour
                                 spindles_positions[i].append(j*n_pts_epochs + max_pos)
                                 spindles_heights[i].append(np.round(np.max(wave_heights),0))
                                 spindles_length[i].append(myAlgos.waveLength(wave_peaks))
-                                print(myAlgos.waveLength(wave_peaks))
                             else :
                                 fails[5] += 1
                                 continue
@@ -162,14 +162,29 @@ for i in range(len(spindles_positions[jour])):
 plt.plot(hypnograms_long[jour] * 100, color = 'C1')    
     
 #%% Densité des spindles
-spindle_density = [None] * 7
-for i in range(7):
-    # Je sépare arbitrairement une nuit en 10 parties égales
+parts = 8 # Je sépare arbitrairement une nuit en 10 parties égales
+spindle_density = np.zeros([n_days, parts])
+spindle_density_mean = np.zeros(parts)
+spindle_density_std = np.zeros(parts)
+
+plt.figure()
+for i in range(n_days):
     l = len(eeg_signals[i])
-    spindle_density[i] = [] * 10
-    for j in range(10):
-        np.where(int((l + j) / 10) < np.array(spindles_positions[i]) < int((l + j + 1) / 10))
-    
+    for j in range(parts):
+        temp = np.array(spindles_positions[i])
+        bool_table = np.equal(temp < j*l/parts, temp > (j+1)*l/parts)
+        spindle_density[i,j] = (sum(bool_table))
+    plt.plot(spindle_density[i])
+
+for k in range(parts): 
+    spindle_density_mean[k] = np.mean(spindle_density[:,k])
+    spindle_density_std[k] = np.std(spindle_density[:,k])
+plt.figure()
+plt.errorbar(np.arange(parts), spindle_density_mean, spindle_density_std, linestyle='-', marker='o', capsize=5)
+
+#%% T-test
+t, p = scipy.stats.ttest_ind(spindle_density[:,0], spindle_density[:,1])
+
     
 #%% Repartition des epochs par stade de sommeil:
 #hypnograms_epochs = signal_to_epochs(hypnograms_long)
