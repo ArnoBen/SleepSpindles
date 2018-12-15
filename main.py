@@ -160,9 +160,23 @@ plt.ylim(-500,500)
 for i in range(len(spindles_positions[jour])):
     plt.axvline(x = spindles_positions[jour][i], ymin = 0.4, ymax = 0.6, color = 'r')
 plt.plot(hypnograms_long[jour] * 100, color = 'C1')    
-    
+
+#%% Repartition des epochs par stade de sommeil:
+stage = [0] * 5
+for i in range(7):
+    for pos in spindles_positions[i]:
+        stage[int(hypnograms_long[i][pos])] += 1
+#plt.clf()
+#
+#fig = plt.figure(figsize = (10,5))
+## Histogramme par stade de sommeil
+#plt.barh(np.arange(5), stage)
+#plt.xlabel("nb d'occurrences")
+#plt.yticks(np.arange(5),('Eveil', 'Sommeil léger N1', 'Sommeil léger N2', 'Sommeil profond N3', 'REM'))
+#
+#plt.show()  
 #%% Densité des spindles
-parts = 8 # Je sépare arbitrairement une nuit en 10 parties égales
+parts = 2 # Je sépare arbitrairement une nuit en 10 parties égales
 spindle_density = np.zeros([n_days, parts])
 spindle_density_mean = np.zeros(parts)
 spindle_density_std = np.zeros(parts)
@@ -182,21 +196,16 @@ for k in range(parts):
 plt.figure()
 plt.errorbar(np.arange(parts), spindle_density_mean, spindle_density_std, linestyle='-', marker='o', capsize=5)
 
-#%% T-test
+# T-test
 t, p = scipy.stats.ttest_ind(spindle_density[:,0], spindle_density[:,1])
+print(t)
 
+#%%
+duration_S2_tot = np.sum(np.concatenate(hypnograms_long) == 2)
+time_tot = myAlgos.pointsToTime(duration_S2_tot)
+min_tot = time_tot[0] * time_tot[1]
     
-#%% Repartition des epochs par stade de sommeil:
-#hypnograms_epochs = signal_to_epochs(hypnograms_long)
-#def epoch_to_sleepstage(epochs):
-#    epochs_stade = [None] * n_days
-#    for i in range(7) : 
-#        epochs_stade[i] = [None] * 5 
-#        for j in range(5):
-#            epochs_stade[i][j] = epochs[0][np.where(hypnograms_epochs[0][:,0]==j)]
-#    return epochs_stade
-#epochs_stade_filt = epoch_to_sleepstage(epochs_filt)
-
+stage[2]/min_tot
 #%%
 
 
